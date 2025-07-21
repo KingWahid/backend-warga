@@ -16,15 +16,17 @@ class PengajuanModel extends Pengajuan {
     super.rejectedBy,
     super.rejectedAt,
     super.notes,
+    required super.rtId,
+    super.ttdRtUrl,
   });
   
   factory PengajuanModel.fromJson(Map<String, dynamic> json) {
     return PengajuanModel(
       id: json['id'] ?? '',
       suratId: json['surat_id'] ?? '',
-      suratNama: json['surat_nama'] ?? '',
+      suratNama: json['surat']?['nama'] ?? '-', // akses nested
       wargaId: json['warga_id'] ?? '',
-      wargaNama: json['warga_nama'] ?? '',
+      wargaNama: json['warga']?['nama_lengkap'] ?? '-', // akses nested
       status: json['status'] ?? '',
       alasan: json['alasan'],
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
@@ -34,6 +36,8 @@ class PengajuanModel extends Pengajuan {
       rejectedBy: json['rejected_by'],
       rejectedAt: json['rejected_at'] != null ? DateTime.parse(json['rejected_at']) : null,
       notes: json['notes'],
+      rtId: json['rt_id'] ?? 0,
+      ttdRtUrl: json['ttd_rt_url'],
     );
   }
   
@@ -53,6 +57,8 @@ class PengajuanModel extends Pengajuan {
       'rejected_by': rejectedBy,
       'rejected_at': rejectedAt?.toIso8601String(),
       'notes': notes,
+      'rt_id': rtId,
+      'ttd_rt_url': ttdRtUrl,
     };
   }
   
@@ -72,6 +78,17 @@ class PengajuanModel extends Pengajuan {
       rejectedBy: pengajuan.rejectedBy,
       rejectedAt: pengajuan.rejectedAt,
       notes: pengajuan.notes,
+      rtId: pengajuan.rtId,
+      ttdRtUrl: pengajuan.ttdRtUrl,
     );
+  }
+
+  Map<String, dynamic> toJsonCreate() {
+    return {
+      'surat_id': suratId,
+      'warga_id': wargaId,
+      'rt_id': rtId,
+      'alasan': alasan,
+    };
   }
 } 

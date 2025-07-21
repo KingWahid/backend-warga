@@ -89,7 +89,7 @@ func main() {
 	delivery.RegisterKartuKeluargaRoutes(r, kkUC)
 	delivery.RegisterWargaRoutes(r, wargaUC)
 	delivery.RegisterSuratRoutes(r, suratUC)
-	delivery.RegisterPengajuanRoutes(r, pengajuanUC)
+	delivery.RegisterPengajuanRoutes(r, pengajuanUC, kkRepo, authMiddleware)
 
 	// Register Auth
 	authGroup := r.Group("/api")

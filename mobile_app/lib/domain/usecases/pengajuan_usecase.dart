@@ -52,3 +52,27 @@ class DeletePengajuanUseCase {
     return await repository.deletePengajuan(id);
   }
 } 
+
+class GetPengajuanListByRTUseCase {
+  final PengajuanRepository repository;
+  GetPengajuanListByRTUseCase(this.repository);
+  Future<Either<Failure, List<Pengajuan>>> call(int rtId) async {
+    return await repository.getPengajuanListByRT(rtId);
+  }
+}
+
+class ApprovePengajuanByRTUseCase {
+  final PengajuanRepository repository;
+  ApprovePengajuanByRTUseCase(this.repository);
+  Future<Either<Failure, void>> call(String id, String ttdRtUrl) {
+    return repository.approvePengajuanByRT(id, ttdRtUrl);
+  }
+}
+
+class RejectPengajuanByRTUseCase {
+  final PengajuanRepository repository;
+  RejectPengajuanByRTUseCase(this.repository);
+  Future<Either<Failure, void>> call(String id) {
+    return repository.rejectPengajuanByRT(id);
+  }
+} 

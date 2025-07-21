@@ -2,6 +2,8 @@ package repository
 
 import (
 	"backend-warga/internal/model"
+	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,6 +18,9 @@ type PengajuanRepository interface {
 	Delete(id string) error
 	Approve(id string, approvedBy string) error
 	Reject(id string, rejectedBy string, reason string) error
+	GetByRTID(ctx context.Context, rtID int) ([]*model.Pengajuan, error)
+	ApproveByRT(ctx context.Context, id string, ttdRTUrl string) error
+	RejectByRT(ctx context.Context, id string) error
 }
 
 type pengajuanRepository struct {
@@ -80,4 +85,32 @@ func (r *pengajuanRepository) Reject(id string, rejectedBy string, reason string
 		"rejected_at": gorm.Expr("NOW()"),
 		"notes":       reason,
 	}).Error
+}
+
+func (r *pengajuanRepository) GetByRTID(ctx context.Context, rtID int) ([]*model.Pengajuan, error) {
+	var pengajuans []*model.Pengajuan
+	err := r.db.WithContext(ctx).
+		Preload("Warga.KartuKeluarga").
+		Preload("Surat").
+		Where("rt_id = ?", rtID).
+		Find(&pengajuans).Error
+	return pengajuans, err
+}
+
+func (r *pengajuanRepository) ApproveByRT(ctx context.Context, id string, ttdRTUrl string) error {
+	return r.db.WithContext(ctx).Model(&model.Pengajuan{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":      "approved_rt",
+			"ttd_rt_url":  ttdRTUrl,
+			"approved_at": time.Now(),
+		}).Error
+}
+
+func (r *pengajuanRepository) RejectByRT(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Model(&model.Pengajuan{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status": "rejected",
+		}).Error
 }

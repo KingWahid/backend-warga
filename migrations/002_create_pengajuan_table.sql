@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS pengajuan (
     warga_id UUID NOT NULL REFERENCES warga(id),
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
     alasan TEXT,
+    rt_id INT NOT NULL REFERENCES rt(id),
+    ttd_rt_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE,
@@ -21,4 +23,4 @@ CREATE TABLE IF NOT EXISTS pengajuan (
 CREATE INDEX IF NOT EXISTS idx_pengajuan_surat_id ON pengajuan(surat_id);
 CREATE INDEX IF NOT EXISTS idx_pengajuan_warga_id ON pengajuan(warga_id);
 CREATE INDEX IF NOT EXISTS idx_pengajuan_status ON pengajuan(status);
-CREATE INDEX IF NOT EXISTS idx_pengajuan_created_at ON pengajuan(created_at); 
+CREATE INDEX IF NOT EXISTS idx_pengajuan_created_at ON pengajuan(created_at);

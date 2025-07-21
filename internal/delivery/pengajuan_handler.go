@@ -1,21 +1,27 @@
 package delivery
 
 import (
+	"log"
 	"net/http"
+	"strconv"
 
 	"backend-warga/internal/model"
+	"backend-warga/internal/repository"
 	"backend-warga/internal/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type PengajuanHandler struct {
-	pengajuanUseCase usecase.PengajuanUseCase
+	pengajuanUseCase  usecase.PengajuanUseCase
+	kartuKeluargaRepo repository.KartuKeluargaRepository
 }
 
-func NewPengajuanHandler(pengajuanUseCase usecase.PengajuanUseCase) *PengajuanHandler {
+func NewPengajuanHandler(pengajuanUseCase usecase.PengajuanUseCase, kkRepo repository.KartuKeluargaRepository) *PengajuanHandler {
 	return &PengajuanHandler{
-		pengajuanUseCase: pengajuanUseCase,
+		pengajuanUseCase:  pengajuanUseCase,
+		kartuKeluargaRepo: kkRepo,
 	}
 }
 
@@ -113,6 +119,7 @@ func (h *PengajuanHandler) CreatePengajuan(c *gin.Context) {
 	var pengajuan model.Pengajuan
 
 	if err := c.ShouldBindJSON(&pengajuan); err != nil {
+		log.Println("[DEBUG] Error binding JSON:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -145,8 +152,14 @@ func (h *PengajuanHandler) UpdatePengajuan(c *gin.Context) {
 		return
 	}
 
-	pengajuan.ID = id
-	err := h.pengajuanUseCase.UpdatePengajuan(&pengajuan)
+	uuidID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pengajuan ID"})
+		return
+	}
+	pengajuan.ID = uuidID
+
+	err = h.pengajuanUseCase.UpdatePengajuan(&pengajuan)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -239,8 +252,98 @@ func (h *PengajuanHandler) RejectPengajuan(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Pengajuan rejected successfully"})
 }
 
-func RegisterPengajuanRoutes(r *gin.Engine, uc usecase.PengajuanUseCase) {
-	handler := NewPengajuanHandler(uc)
+// List pengajuan untuk RT
+func (h *PengajuanHandler) GetPengajuanByRTID(c *gin.Context) {
+	// Ambil user dari context
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userModel, ok := user.(*model.User)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	if userModel.Role != model.RoleRT {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Hanya RT yang boleh mengakses"})
+		return
+	}
+
+	// Ambil param RT ID dari URL
+	paramRTIDStr := c.Param("rt_id")
+	paramRTID, err := strconv.Atoi(paramRTIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid RT ID"})
+		return
+	}
+
+	// Ambil no_kk dari warga user RT
+	if userModel.Warga == nil {
+		log.Println("[DEBUG] Data warga tidak ditemukan pada user:", userModel)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Data warga tidak ditemukan pada user"})
+		return
+	}
+	noKK := userModel.Warga.NoKK
+
+	// Query kartu keluarga berdasarkan no_kk
+	kk, err := h.kartuKeluargaRepo.GetByNoKK(c.Request.Context(), noKK)
+	if err != nil || kk == nil {
+		log.Println("[DEBUG] Gagal mengambil data kartu keluarga:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data kartu keluarga"})
+		return
+	}
+	userRTID := kk.RTID
+
+	// Validasi RT ID
+	if paramRTID != userRTID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Tidak boleh mengakses pengajuan RT lain"})
+		return
+	}
+
+	// Jika lolos, ambil data pengajuan
+	pengajuans, err := h.pengajuanUseCase.GetByRTID(c.Request.Context(), paramRTID)
+	if err != nil {
+		log.Println("[DEBUG] Error get pengajuan by RTID:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, pengajuans)
+}
+
+// RT approve
+func (h *PengajuanHandler) ApprovePengajuanByRT(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		TtdRTUrl string `json:"ttd_rt_url"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	err := h.pengajuanUseCase.ApproveByRT(c.Request.Context(), id, req.TtdRTUrl)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Pengajuan approved by RT"})
+}
+
+// RT reject
+func (h *PengajuanHandler) RejectPengajuanByRT(c *gin.Context) {
+	id := c.Param("id")
+	err := h.pengajuanUseCase.RejectByRT(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Pengajuan rejected by RT"})
+}
+
+func RegisterPengajuanRoutes(r *gin.Engine, uc usecase.PengajuanUseCase, kkRepo repository.KartuKeluargaRepository, authMiddleware interface {
+	RequireToken(...string) gin.HandlerFunc
+}) {
+	handler := NewPengajuanHandler(uc, kkRepo)
 
 	api := r.Group("/api")
 	{
@@ -253,5 +356,8 @@ func RegisterPengajuanRoutes(r *gin.Engine, uc usecase.PengajuanUseCase) {
 		api.DELETE("/pengajuan/:id", handler.DeletePengajuan)
 		api.PUT("/pengajuan/:id/approve", handler.ApprovePengajuan)
 		api.PUT("/pengajuan/:id/reject", handler.RejectPengajuan)
+		api.GET("/pengajuan/rt/:rt_id", authMiddleware.RequireToken("rt"), handler.GetPengajuanByRTID)
+		api.PUT("/pengajuan/:id/approve-rt", handler.ApprovePengajuanByRT)
+		api.PUT("/pengajuan/:id/reject-rt", handler.RejectPengajuanByRT)
 	}
 }

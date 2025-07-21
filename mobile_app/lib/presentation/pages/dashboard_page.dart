@@ -7,6 +7,8 @@ import '../blocs/auth/auth_state.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_config.dart';
 import '../../domain/entities/user.dart';
+import 'rt/pengajuan_rt_page.dart'; // Import sesuai path file Anda
+import '../../data/services/rt_helper.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({Key? key}) : super(key: key);
@@ -261,8 +263,32 @@ class DashboardPage extends StatelessWidget {
               'Approval Pengajuan',
               Icons.approval,
               AppColors.rt,
-              () {
-                // TODO: Navigate to approval page
+              () async {
+                try {
+                  print('[DEBUG] User RT klik Approval Pengajuan, user: ' + user.toString());
+                  final rtId = await getRtIdForUser(user);
+                  print('[DEBUG] Hasil getRtIdForUser: ' + rtId.toString());
+                  if (rtId == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Data RT tidak ditemukan!')),
+                    );
+                    print('[DEBUG] RT ID tidak ditemukan!');
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PengajuanRTPage(rtId: rtId),
+                    ),
+                  );
+                  print('[DEBUG] Navigasi ke PengajuanRTPage dengan rtId: ' + rtId.toString());
+                } catch (e, stack) {
+                  print('[DEBUG] Error Approval Pengajuan: ' + e.toString());
+                  print('[DEBUG] Stacktrace: ' + stack.toString());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Terjadi error: ' + e.toString())),
+                  );
+                }
               },
             ),
             _buildFeatureCard(

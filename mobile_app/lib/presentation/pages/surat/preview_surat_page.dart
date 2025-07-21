@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/surat.dart';
 import '../../../domain/entities/warga.dart';
+import 'package:mobile_warga/data/datasources/pengajuan_remote_data_source.dart';
+import 'package:mobile_warga/data/models/pengajuan_model.dart';
+import '../../../core/di/injection.dart';
+import 'package:dio/dio.dart';
 
 class PreviewSuratPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -377,16 +381,58 @@ class _PreviewSuratPageState extends State<PreviewSuratPage> {
     );
   }
 
-  void _submitPengajuanToServer() {
-    // TODO: Implement API call to submit pengajuan
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pengajuan surat berhasil dikirim'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    
-    // Navigate back to dashboard
-    context.go('/');
+  void _submitPengajuanToServer() async {
+    try {
+      if (warga.kartuKeluarga == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data kartu keluarga tidak ditemukan')),
+        );
+        return;
+      }
+
+      // Buat payload manual tanpa field waktu
+      final pengajuanPayload = {
+        'surat_id': surat.id,
+        'warga_id': warga.id,
+        'rt_id': warga.kartuKeluarga!.rtId,
+        'alasan': 'Pengajuan surat dari aplikasi mobile',
+      };
+
+      print('[DEBUG] Payload pengajuan: $pengajuanPayload');
+
+      final pengajuanRemoteDataSource = getIt<PengajuanRemoteDataSource>();
+      // Gunakan fromJson agar hanya field yang ada di payload yang dikirim
+      await pengajuanRemoteDataSource.createPengajuan(
+        PengajuanModel.fromJson(pengajuanPayload).toJsonCreate()
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pengajuan surat berhasil dikirim'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      context.go('/');
+    } catch (e) {
+      String errorMsg = 'Gagal mengajukan surat: ';
+      if (e is DioException) {
+        print('[DEBUG] DioException response data: ${e.response?.data}');
+        if (e.response != null && e.response?.data != null) {
+          errorMsg += e.response?.data['error']?.toString() ?? e.message ?? e.toString();
+          print('[DEBUG] Response data: ${e.response?.data}');
+        } else {
+          errorMsg += e.message ?? e.toString();
+        }
+      } else {
+        errorMsg += e.toString();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red,
+        ),
+      );
+      print('[DEBUG] Error submit pengajuan: $errorMsg');
+    }
   }
 } 

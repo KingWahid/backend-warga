@@ -4,9 +4,12 @@ import '../models/pengajuan_model.dart';
 abstract class PengajuanRemoteDataSource {
   Future<List<PengajuanModel>> getPengajuanList();
   Future<PengajuanModel> getPengajuanById(String id);
-  Future<PengajuanModel> createPengajuan(PengajuanModel pengajuan);
+  Future<PengajuanModel> createPengajuan(Map<String, dynamic> data);
   Future<PengajuanModel> updatePengajuan(PengajuanModel pengajuan);
   Future<void> deletePengajuan(String id);
+  Future<List<PengajuanModel>> getPengajuanListByRT(int rtId);
+  Future<void> approvePengajuanByRT(String id, String ttdRtUrl);
+  Future<void> rejectPengajuanByRT(String id);
 }
 
 class PengajuanRemoteDataSourceImpl implements PengajuanRemoteDataSource {
@@ -46,9 +49,9 @@ class PengajuanRemoteDataSourceImpl implements PengajuanRemoteDataSource {
   }
   
   @override
-  Future<PengajuanModel> createPengajuan(PengajuanModel pengajuan) async {
+  Future<PengajuanModel> createPengajuan(Map<String, dynamic> data) async {
     try {
-      final response = await apiClient.post('/pengajuan', data: pengajuan.toJson());
+      final response = await apiClient.post('/pengajuan', data: data);
       
       if (response.statusCode == 201) {
         return PengajuanModel.fromJson(response.data);
@@ -85,6 +88,45 @@ class PengajuanRemoteDataSourceImpl implements PengajuanRemoteDataSource {
       }
     } catch (e) {
       throw Exception('Failed to delete pengajuan: $e');
+    }
+  }
+
+  @override
+  Future<List<PengajuanModel>> getPengajuanListByRT(int rtId) async {
+    try {
+      final response = await apiClient.get('/pengajuan/rt/$rtId');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => PengajuanModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to get pengajuan list by RT: ${response.data['error'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      throw Exception('Failed to get pengajuan list by RT: $e');
+    }
+  }
+
+  @override
+  Future<void> approvePengajuanByRT(String id, String ttdRtUrl) async {
+    try {
+      final response = await apiClient.put('/pengajuan/$id/approve-rt', data: {'ttd_rt_url': ttdRtUrl});
+      if (response.statusCode != 200) {
+        throw Exception('Failed to approve pengajuan by RT: ${response.data['error'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      throw Exception('Failed to approve pengajuan by RT: $e');
+    }
+  }
+
+  @override
+  Future<void> rejectPengajuanByRT(String id) async {
+    try {
+      final response = await apiClient.put('/pengajuan/$id/reject-rt');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to reject pengajuan by RT: ${response.data['error'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      throw Exception('Failed to reject pengajuan by RT: $e');
     }
   }
 } 

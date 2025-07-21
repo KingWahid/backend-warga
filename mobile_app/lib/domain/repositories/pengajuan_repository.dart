@@ -8,4 +8,7 @@ abstract class PengajuanRepository {
   Future<Either<Failure, Pengajuan>> createPengajuan(Pengajuan pengajuan);
   Future<Either<Failure, Pengajuan>> updatePengajuan(Pengajuan pengajuan);
   Future<Either<Failure, void>> deletePengajuan(String id);
+  Future<Either<Failure, List<Pengajuan>>> getPengajuanListByRT(int rtId);
+  Future<Either<Failure, void>> approvePengajuanByRT(String id, String ttdRtUrl);
+  Future<Either<Failure, void>> rejectPengajuanByRT(String id);
 } 

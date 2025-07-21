@@ -11,6 +11,7 @@ abstract class WargaRemoteDataSource {
   Future<WargaModel> createWarga(Map<String, dynamic> data);
   Future<WargaModel> updateWarga(String id, Map<String, dynamic> data);
   Future<void> deleteWarga(String id);
+  Future<WargaModel?> getWargaById(String id);
 }
 
 class WargaRemoteDataSourceImpl implements WargaRemoteDataSource {
@@ -167,6 +168,20 @@ class WargaRemoteDataSourceImpl implements WargaRemoteDataSource {
       }
     } catch (e) {
       throw Exception('Failed to delete warga: $e');
+    }
+  }
+
+  @override
+  Future<WargaModel?> getWargaById(String id) async {
+    try {
+      final response = await apiClient.get('/warga/$id');
+      if (response.statusCode == 200) {
+        return WargaModel.fromJson(response.data['data']);
+      } else {
+        throw Exception('Failed to get warga by ID: ${response.data['error'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      throw Exception('Failed to get warga by ID: $e');
     }
   }
 } 

@@ -5,12 +5,14 @@ class User extends Equatable {
   final String email;
   final String nama;
   final String role;
+  final String? wargaId;
   
   const User({
     required this.id,
     required this.email,
     required this.nama,
     required this.role,
+    this.wargaId,
   });
   
   @override
@@ -19,6 +21,7 @@ class User extends Equatable {
     email,
     nama,
     role,
+    wargaId,
   ];
   
   User copyWith({
@@ -26,12 +29,14 @@ class User extends Equatable {
     String? email,
     String? nama,
     String? role,
+    String? wargaId,
   }) {
     return User(
       id: id ?? this.id,
       email: email ?? this.email,
       nama: nama ?? this.nama,
       role: role ?? this.role,
+      wargaId: wargaId ?? this.wargaId,
     );
   }
 } 

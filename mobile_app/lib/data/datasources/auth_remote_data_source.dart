@@ -60,5 +60,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   Future<void> _saveToken(String token) async {
     await sharedPreferences.setString(AppConfig.tokenKey, token);
+    print('[DEBUG] Token yang disimpan: $token'); // Tambahkan baris ini
   }
 } 

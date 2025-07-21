@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/kartu_keluarga.dart';
 import '../../domain/entities/warga.dart';
-import 'kartu_keluarga_model.dart';
+
 
 class Warga extends Equatable {
   final String id;

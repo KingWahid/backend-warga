@@ -7,6 +7,7 @@ import (
 	"backend-warga/internal/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type SuratHandler struct {
@@ -103,8 +104,14 @@ func (h *SuratHandler) UpdateSurat(c *gin.Context) {
 		return
 	}
 
-	surat.ID = id
-	err := h.suratUseCase.UpdateSurat(&surat)
+	uuidID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid surat ID"})
+		return
+	}
+	surat.ID = uuidID
+
+	err = h.suratUseCase.UpdateSurat(&surat)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

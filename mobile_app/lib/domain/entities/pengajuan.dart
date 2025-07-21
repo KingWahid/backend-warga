@@ -15,6 +15,8 @@ class Pengajuan extends Equatable {
   final String? rejectedBy;
   final DateTime? rejectedAt;
   final String? notes;
+  final int rtId;
+  final String? ttdRtUrl;
   
   const Pengajuan({
     required this.id,
@@ -31,6 +33,8 @@ class Pengajuan extends Equatable {
     this.rejectedBy,
     this.rejectedAt,
     this.notes,
+    required this.rtId,
+    this.ttdRtUrl,
   });
   
   @override
@@ -49,6 +53,8 @@ class Pengajuan extends Equatable {
     rejectedBy,
     rejectedAt,
     notes,
+    rtId,
+    ttdRtUrl,
   ];
   
   Pengajuan copyWith({
@@ -66,6 +72,8 @@ class Pengajuan extends Equatable {
     String? rejectedBy,
     DateTime? rejectedAt,
     String? notes,
+    int? rtId,
+    String? ttdRtUrl,
   }) {
     return Pengajuan(
       id: id ?? this.id,
@@ -82,6 +90,8 @@ class Pengajuan extends Equatable {
       rejectedBy: rejectedBy ?? this.rejectedBy,
       rejectedAt: rejectedAt ?? this.rejectedAt,
       notes: notes ?? this.notes,
+      rtId: rtId ?? this.rtId,
+      ttdRtUrl: ttdRtUrl ?? this.ttdRtUrl,
     );
   }
 }
