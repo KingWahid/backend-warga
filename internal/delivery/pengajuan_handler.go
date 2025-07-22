@@ -53,14 +53,17 @@ func (h *PengajuanHandler) GetPengajuanList(c *gin.Context) {
 // @Success 200 {object} model.Pengajuan
 // @Router /pengajuan/{id} [get]
 func (h *PengajuanHandler) GetPengajuanByID(c *gin.Context) {
-	id := c.Param("id")
-
-	pengajuan, err := h.pengajuanUseCase.GetPengajuanByID(id)
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Pengajuan not found"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
-
+	pengajuan, err := h.pengajuanUseCase.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Pengajuan tidak ditemukan"})
+		return
+	}
 	c.JSON(http.StatusOK, pengajuan)
 }
 

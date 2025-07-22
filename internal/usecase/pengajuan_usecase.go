@@ -4,6 +4,8 @@ import (
 	"backend-warga/internal/model"
 	"backend-warga/internal/repository"
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type PengajuanUseCase interface {
@@ -19,6 +21,7 @@ type PengajuanUseCase interface {
 	GetByRTID(ctx context.Context, rtID int) ([]*model.Pengajuan, error)
 	ApproveByRT(ctx context.Context, id string, ttdRTUrl string) error
 	RejectByRT(ctx context.Context, id string) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Pengajuan, error)
 }
 
 type pengajuanUseCase struct {
@@ -75,4 +78,8 @@ func (u *pengajuanUseCase) ApproveByRT(ctx context.Context, id string, ttdRTUrl 
 
 func (u *pengajuanUseCase) RejectByRT(ctx context.Context, id string) error {
 	return u.repo.RejectByRT(ctx, id)
+}
+
+func (u *pengajuanUseCase) GetByID(ctx context.Context, id uuid.UUID) (*model.Pengajuan, error) {
+	return u.repo.FindByIDWithContext(ctx, id)
 }

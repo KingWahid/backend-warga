@@ -5,6 +5,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,7 @@ type PengajuanRepository interface {
 	GetByRTID(ctx context.Context, rtID int) ([]*model.Pengajuan, error)
 	ApproveByRT(ctx context.Context, id string, ttdRTUrl string) error
 	RejectByRT(ctx context.Context, id string) error
+	FindByIDWithContext(ctx context.Context, id uuid.UUID) (*model.Pengajuan, error)
 }
 
 type pengajuanRepository struct {
@@ -113,4 +115,16 @@ func (r *pengajuanRepository) RejectByRT(ctx context.Context, id string) error {
 		Updates(map[string]interface{}{
 			"status": "rejected",
 		}).Error
+}
+
+func (r *pengajuanRepository) FindByIDWithContext(ctx context.Context, id uuid.UUID) (*model.Pengajuan, error) {
+	var pengajuan model.Pengajuan
+	err := r.db.WithContext(ctx).
+		Preload("Warga.KartuKeluarga").
+		Preload("Surat").
+		First(&pengajuan, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &pengajuan, nil
 }

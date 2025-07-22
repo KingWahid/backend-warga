@@ -1,6 +1,11 @@
 import '../../domain/entities/pengajuan.dart';
+import 'warga_model.dart';
+import 'surat_model.dart';
 
 class PengajuanModel extends Pengajuan {
+  final WargaModel? warga;
+  final SuratModel? surat;
+
   const PengajuanModel({
     required super.id,
     required super.suratId,
@@ -18,6 +23,8 @@ class PengajuanModel extends Pengajuan {
     super.notes,
     required super.rtId,
     super.ttdRtUrl,
+    this.warga,
+    this.surat,
   });
   
   factory PengajuanModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +45,8 @@ class PengajuanModel extends Pengajuan {
       notes: json['notes'],
       rtId: json['rt_id'] ?? 0,
       ttdRtUrl: json['ttd_rt_url'],
+      warga: json['warga'] != null ? WargaModel.fromJson(json['warga']) : null,
+      surat: json['surat'] != null ? SuratModel.fromJson(json['surat']) : null,
     );
   }
   
